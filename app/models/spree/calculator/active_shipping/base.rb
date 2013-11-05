@@ -199,7 +199,7 @@ module Spree
             variant = item.variant
             options = { :units => units }
             if variant.cylinder?
-              dimensions = [variant.width, variant.diameter]
+              dimensions = [variant.height, variant.diameter]
               options.merge({:cylinder => true})
             else
               dimensions = [variant.width, variant.height, variant.depth]
