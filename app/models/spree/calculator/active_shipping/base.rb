@@ -189,51 +189,23 @@ module Spree
           weights.flatten.sort
         end
 
-        def convert_order_to_item_packages_array(order)
-          multiplier = Spree::ActiveShipping::Config[:unit_multiplier]
-          max_weight = get_max_weight(order)
-          packages = []
-
-          order.line_items.each do |line_item|
-            line_item.product_packages.each do |product_package|
-              if product_package.weight <= max_weight or max_weight == 0
-                line_item.quantity.times do |idx|
-                  packages << [product_package.weight * multiplier, product_package.length, product_package.width, product_package.height]
-                end
-              else
-                raise Spree::ShippingError.new("#{I18n.t(:shipping_error)}: The maximum per package weight for the selected service from the selected country is #{max_weight} ounces.")
-              end
-            end
-          end
-
-          packages
-        end
-
-        # Generates an array of Package objects based on the quantities and weights of the variants in the line items
+        # Generates an array of Package objects based on the 
+        # quantities and weights of the variants in the line items
         def packages(order)
           units = Spree::ActiveShipping::Config[:units].to_sym
           packages = []
-          weights = convert_order_to_weights_array(order)
-          max_weight = get_max_weight(order)
-          item_specific_packages = convert_order_to_item_packages_array(order)
 
-          if max_weight <= 0
-            packages << Package.new(weights.sum, [], :units => units)
-          else
-            package_weight = 0
-            weights.each do |li_weight|
-              if package_weight + li_weight <= max_weight
-                package_weight += li_weight
-              else
-                packages << Package.new(package_weight, [], :units => units)
-                package_weight = li_weight
-              end
+          order.line_items.each do |item|
+            variant = item.variant
+            options = { :units => units }
+            if variant.cylinder?
+              dimensions = [variant.width, variant.diameter]
+              options.merge({:cylinder => true})
+            else
+              dimensions = [variant.width, variant.height, variant.depth]
             end
-            packages << Package.new(package_weight, [], :units => units) if package_weight > 0
-          end
 
-          item_specific_packages.each do |package|
-            packages << Package.new(package.at(0), [package.at(1), package.at(2), package.at(3)], :units => :imperial)
+            packages << Package.new(variant.weight, dimensions, options)
           end
 
           packages
