@@ -182,7 +182,9 @@ module Spree
                   new_items
                 end
               else
-                raise Spree::ShippingError.new("#{I18n.t(:shipping_error)}: The maximum per package weight for the selected service from the selected country is #{max_weight} ounces.")
+                units = Spree::ActiveShipping::Config[:units].to_sym
+                unit_name = units == :metric ? 'grams' : 'ounces'
+                raise Spree::ShippingError.new("#{I18n.t(:shipping_error)}: The maximum per package weight for the selected service from the selected country is #{max_weight} #{unit_name}.")
               end
             end
           end
