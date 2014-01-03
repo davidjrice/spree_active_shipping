@@ -199,6 +199,7 @@ module Spree
 
           order.line_items.each do |item|
             variant = item.variant
+            next if variant.product.is_gift_card?
             options = { :units => units }
             if variant.cylinder?
               dimensions = [variant.height, variant.diameter]
